@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <!-- Witsarut Homkanchan 6310401165 -->
+    <title>XR Homework 1</title>
+
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://preview.babylonjs.com/ammo.js"></script>
+    <script src="https://preview.babylonjs.com/cannon.js"></script>
+    <script src="https://preview.babylonjs.com/Oimo.js"></script>
+    <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+    <style>
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        
+        const createScene = function () {
+
+            const scene = new BABYLON.Scene(engine);
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(0, 0, 0));
+            camera.attachControl(canvas, true);
+            camera.upperBetaLimit = Math.PI / 2.1;
+            camera.lowerRadiusLimit = 10;
+            camera.upperRadiusLimit = 70;
+
+            const  light = new BABYLON.DirectionalLight("dir01", new BABYLON.Vector3(-0.4, -1, 1), scene);
+            light.position = new BABYLON.Vector3(0, 50, -10);
+            const shadowGenerator = new BABYLON.ShadowGenerator(2048, light);
+            const ground = buildGround();
+            scene.getMeshByName("ground").receiveShadows = true;
+
+            //Sky setup
+            const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:150}, scene);
+            const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+              skyboxMaterial.backFaceCulling = false;
+              skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("assets/skybox", scene);
+              skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+              skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+              skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+              skybox.material = skyboxMaterial;
+            
+            //Shop setup
+            BABYLON.SceneLoader.ImportMeshAsync("", "assets/", "shop.gltf").then((result) => {
+                
+                const shop1 = result.meshes[0];
+                shop1.rotation = new BABYLON.Vector3(0,Math.PI/2,0);
+                shop1.position = new BABYLON.Vector3(-15,0,8);
+                shadowGenerator.addShadowCaster(shop1, true);
+
+                shop2 = shop1.clone("shop2");
+                shop2.position = new BABYLON.Vector3(-7.5,0,8);
+                shadowGenerator.addShadowCaster(shop2, true);
+
+                shop3 = shop1.clone("shop3");
+                shop3.position = new BABYLON.Vector3(0,0,8);
+                shadowGenerator.addShadowCaster(shop3, true);
+
+                shop4 = shop1.clone("shop4");
+                shop4.position = new BABYLON.Vector3(7.5,0,8);
+                shadowGenerator.addShadowCaster(shop4, true);
+
+                shop5 = shop1.clone("shop5");
+                shop5.position = new BABYLON.Vector3(15,0,8);
+                shadowGenerator.addShadowCaster(shop5, true);
+                
+
+                shop6 = shop1.clone("shop6");
+                shop6.rotation = new BABYLON.Vector3(0,-Math.PI/2,0);
+                shop6.position = new BABYLON.Vector3(-15,0,-8);
+                shadowGenerator.addShadowCaster(shop6, true);
+
+                shop7 = shop6.clone("Shop7");
+                shop7.position = new BABYLON.Vector3(-7.5,0,-8);
+                shadowGenerator.addShadowCaster(shop7, true);
+
+                shop8 = shop6.clone("Shop8");
+                shop8.position = new BABYLON.Vector3(0,0,-8);
+                shadowGenerator.addShadowCaster(shop8, true);
+
+                shop9 = shop6.clone("Shop9");
+                shop9.position = new BABYLON.Vector3(7.5,0,-8);
+                shadowGenerator.addShadowCaster(shop9, true);
+
+                shop10 = shop6.clone("Shop10");
+                shop10.position = new BABYLON.Vector3(15,0,-8);
+                shadowGenerator.addShadowCaster(shop10, true);
+
+            });
+            //Tree setup
+            BABYLON.SceneLoader.ImportMeshAsync("", "assets/", "tree.gltf").then((result) => {
+                const tree01 = result.meshes[0];
+                tree01.position = new BABYLON.Vector3(25,0,13);
+                tree01.scaling = new BABYLON.Vector3(2,2,2);
+                shadowGenerator.addShadowCaster(tree01, true);
+
+                tree02 = tree01.clone("tree02")
+                tree02.position = new BABYLON.Vector3(21,0,-15);
+                tree02.scaling = new BABYLON.Vector3(1,1,1);
+                shadowGenerator.addShadowCaster(tree02, true);
+
+                tree03 = tree01.clone("tree03")
+                tree03.position = new BABYLON.Vector3(6,0,-13);
+                tree03.scaling = new BABYLON.Vector3(2,1,2);
+                shadowGenerator.addShadowCaster(tree03, true);
+
+                tree04 = tree01.clone("tree04")
+                tree04.position = new BABYLON.Vector3(-3,0,-17);
+                tree04.scaling = new BABYLON.Vector3(1,1.3,1);
+                shadowGenerator.addShadowCaster(tree04, true);
+
+                tree05 = tree01.clone("tree05")
+                tree05.position = new BABYLON.Vector3(-5,0,13);
+                tree05.scaling = new BABYLON.Vector3(1,1,1);
+                shadowGenerator.addShadowCaster(tree05, true);
+
+                tree06 = tree01.clone("tree06")
+                tree06.position = new BABYLON.Vector3(-15,0,15);
+                tree06.scaling = new BABYLON.Vector3(1,1.3,1);
+                shadowGenerator.addShadowCaster(tree06, true);
+
+            });
+            //Board setup
+            BABYLON.SceneLoader.ImportMeshAsync("", "assets/", "board.gltf").then((result) => {
+                const board01 = result.meshes[0];
+                board01.position = new BABYLON.Vector3(-25,0,10);
+                board01.rotation = new BABYLON.Vector3(0,Math.PI/2,0)
+                shadowGenerator.addShadowCaster(board01, true);
+            });       
+
+            //Car setup
+            BABYLON.SceneLoader.ImportMeshAsync("", "assets/", "car.gltf").then((result) =>  {
+                car = result.meshes[0];
+                shadowGenerator.addShadowCaster(car, true);
+                car.rotation = new BABYLON.Vector3(0,Math.PI/2,0);
+                car.position = new BABYLON.Vector3(-28, 1.6, 0);
+                car.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
+                
+
+                const animCar = new BABYLON.Animation("carAnimation", "position.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+                const carKeys = []; 
+                carKeys.push({
+                    frame: 0,
+                    value: -28
+                });
+
+                carKeys.push({
+                    frame: 200,
+                    value: 32
+                });
+                
+                animCar.setKeys(carKeys);
+                car.animations = [];
+                car.animations.push(animCar);
+                scene.beginAnimation(car, 0, 200, true);
+            });
+
+            //Human Setup
+            const walk = function (turn, dist) {
+                this.turn = turn;
+                this.dist = dist;
+            }
+            const track = [];
+                track.push(new walk(180,50));
+                track.push(new walk(0,100));                
+
+            BABYLON.SceneLoader.ImportMeshAsync("him", "assets/", "Dude.babylon").then((result) => {
+                const dude = result.meshes[0];
+                dude.scaling = new BABYLON.Vector3(0.03, 0.03, 0.03);
+                dude.position = new BABYLON.Vector3(-25, 0, -5.5);
+                dude.rotate(BABYLON.Axis.Y, BABYLON.Tools.ToRadians(-90), BABYLON.Space.LOCAL);
+                const startRotation = dude.rotationQuaternion.clone(); 
+                shadowGenerator.addShadowCaster(dude, true);
+
+         
+                scene.beginAnimation(result.skeletons[0], 0, 100, true, 1.0);
+
+
+                let distance = 0;
+                let step = 0.025;
+                let p = 0;
+
+                scene.onBeforeRenderObservable.add(() =>{
+
+                    dude.movePOV(0,0,step);
+                    distance += step;
+
+                    if (distance > track[p].dist){
+                        dude.rotate(BABYLON.Axis.Y, BABYLON.Tools.ToRadians(track[p].turn),BABYLON.Space.LOCAL);
+                        p += 1;
+                        p %= track.length;
+                        if ( p === 0){
+                            distance = 0;
+                            dude.position = new BABYLON.Vector3(-25,0,-5.5);
+                            dude.rotationQuaternion = startRotation.clone();
+                        }
+                    }
+                })
+            });
+
+        
+            return scene;
+        };
+
+
+        //Ground setup
+        const buildGround = () => {
+            const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:70, height:40});
+            const groundMat = new BABYLON.StandardMaterial("groundMat");
+            //groundMat.diffuseColor = new BABYLON.Color3(0.1, 0.5, 0.2);
+            groundMat.diffuseTexture = new BABYLON.Texture("assets/ground.jpg",scene);
+            ground.material = groundMat;
+        }
+        
+        
+        window.initFunction = async function() {
+                        
+            var asyncEngineCreation = async function() {
+                try {
+                    return createDefaultEngine();
+                } catch(e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            startRenderLoop(engine, canvas);
+            window.scene = createScene();};
+            initFunction().then(() => {sceneToRender = scene                    
+            });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
